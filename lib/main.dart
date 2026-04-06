@@ -8,14 +8,32 @@ import 'screens/input2_screen.dart';
 import 'screens/input3_screen.dart';
 import 'screens/ml_demo_screen.dart';
 import 'screens/progress_screen.dart';
+import 'services/tflite_service.dart';
 import 'theme/app_colors.dart';
 
 void main() {
   runApp(const MySegarApp());
 }
 
-class MySegarApp extends StatelessWidget {
+class MySegarApp extends StatefulWidget {
   const MySegarApp({super.key});
+
+  @override
+  State<MySegarApp> createState() => _MySegarAppState();
+}
+
+class _MySegarAppState extends State<MySegarApp> {
+  final TFLiteService _tfliteService = TFLiteService();
+
+  @override
+  void initState() {
+    super.initState();
+    _initTFLite();
+  }
+
+  Future<void> _initTFLite() async {
+    await _tfliteService.init();
+  }
 
   @override
   Widget build(BuildContext context) {
