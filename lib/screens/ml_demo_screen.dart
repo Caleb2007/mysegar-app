@@ -32,7 +32,9 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
 
   Future<void> _initializeModel() async {
     try {
+      print('[UI] Starting model initialization...');
       await _tfliteService.init();
+      print('[UI] Model initialization complete');
 
       if (!mounted) {
         return;
@@ -56,7 +58,8 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
   }
 
   Future<void> _runSampleInference() async {
-    if (_isRunningInference) {
+    if (_isInitializing || _isRunningInference) {
+      print('[UI] Sample inference blocked: initializing=$_isInitializing, running=$_isRunningInference');
       return;
     }
 
@@ -97,7 +100,8 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
   }
 
   Future<void> _takePhoto() async {
-    if (_isRunningInference) {
+    if (_isInitializing || _isRunningInference) {
+      print('[UI] Photo capture blocked: initializing=$_isInitializing, running=$_isRunningInference');
       return;
     }
 
@@ -119,7 +123,7 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
       _isRunningInference = true;
       _imageBytes = bytes;
       _result = null;
-      _statusMessage = 'Running inference on captured photo...';
+      _statusMessage = 'Analyzing image with AI...';
     });
 
     try {
@@ -237,6 +241,8 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              if (_isRunningInference) const LinearProgressIndicator(),
               const SizedBox(height: 20),
               _InfoCard(
                 title: 'Status',
@@ -250,10 +256,46 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
                 title: 'Top Prediction',
                 child: _result == null
                     ? const Text('No inference result yet.')
-                    : Text(
-                        '${_result!['label']}\nConfidence: ${((_result!['confidence'] as double) * 100).toStringAsFixed(2)}\nClass index: ${_result!['index']}',
-                        style: const TextStyle(
-                            height: 1.5, fontWeight: FontWeight.w600),
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _result!['label'],
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Confidence: ${((_result!['confidence'] as double) * 100).toStringAsFixed(2)}%',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: _result!['confidence'] as double,
+                              minHeight: 12,
+                              backgroundColor: Colors.grey[300],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                (_result!['confidence'] as double) > 0.7
+                                    ? Colors.green
+                                    : (_result!['confidence'] as double) > 0.4
+                                        ? Colors.orange
+                                        : Colors.red,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Class index: ${_result!['index']}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
               ),
             ],

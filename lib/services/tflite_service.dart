@@ -7,22 +7,29 @@ class TFLiteService {
   List<String> _labels = [];
 
   Future<void> init() async {
+    print('[TFLite] Initializing model...');
     await loadModel();
     await loadLabels();
+    print(
+        '[TFLite] Model initialization complete. Interpreter: ${_interpreter != null}');
   }
 
   Future<void> loadModel() async {
+    print('[TFLite] Loading model asset...');
     _interpreter =
         await Interpreter.fromAsset('assets/model/model_unquant.tflite');
+    print('[TFLite] Model loaded successfully');
   }
 
   Future<void> loadLabels() async {
-    final labelsData = await rootBundle.loadString('assets/models/labels.txt');
+    print('[TFLite] Loading labels...');
+    final labelsData = await rootBundle.loadString('assets/model/labels.txt');
     _labels = labelsData
         .split('\n')
         .map((e) => e.trim())
         .where((e) => e.isNotEmpty)
         .toList(growable: false);
+    print('[TFLite] Loaded ${_labels.length} labels');
   }
 
   Interpreter get interpreter {
@@ -39,6 +46,12 @@ class TFLiteService {
   List<int> get outputShape => interpreter.getOutputTensor(0).shape;
 
   Future<Map<String, dynamic>> classifyImage(Uint8List imageBytes) async {
+    print(
+        '[TFLite] classifyImage called. Interpreter initialized: ${_interpreter != null}');
+    if (_interpreter == null) {
+      throw StateError(
+          'TFLite interpreter has not been initialized. Call init() first.');
+    }
     final interpreter = this.interpreter;
     final inputShape = interpreter.getInputTensor(0).shape;
 
