@@ -13,60 +13,38 @@ class BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+      margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 16,
-            offset: Offset(0, 4),
-          ),
-        ],
+        color: Colors.white.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border),
+        boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 14, offset: Offset(0, 4))],
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          _item(AppTab.home, 'Home', Icons.home_outlined, Icons.home),
-          _item(AppTab.diary, 'Diary', Icons.menu_book_outlined, Icons.menu_book),
-          _item(AppTab.progress, 'Progress', Icons.bar_chart_outlined, Icons.bar_chart),
+          _item(AppTab.home, Icons.home_rounded, 'Home'),
+          _item(AppTab.diary, Icons.menu_book_rounded, 'Diary'),
+          _item(AppTab.progress, Icons.bar_chart_rounded, 'Progress'),
         ],
       ),
     );
   }
 
-  Widget _item(AppTab tab, String label, IconData icon, IconData activeIcon) {
-    final isActive = active == tab;
-    return Expanded(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () => onTap(tab),
+  Widget _item(AppTab tab, IconData icon, String label) {
+    final selected = active == tab;
+    return InkWell(
+      onTap: () => onTap(tab),
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 42,
-              height: 36,
-              decoration: BoxDecoration(
-                color: isActive ? AppColors.primary.withOpacity(0.1) : Colors.transparent,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: Icon(
-                isActive ? activeIcon : icon,
-                size: 22,
-                color: isActive ? AppColors.primary : AppColors.mutedForeground,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? AppColors.primary : AppColors.mutedForeground,
-              ),
-            ),
+            Icon(icon, color: selected ? AppColors.primary : AppColors.mutedForeground),
+            const SizedBox(height: 4),
+            Text(label, style: TextStyle(fontSize: 12, color: selected ? AppColors.primary : AppColors.mutedForeground, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
           ],
         ),
       ),

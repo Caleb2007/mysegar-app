@@ -1,31 +1,17 @@
-# MySegar Flutter
+# mysegar_new
 
-This is a Flutter port of the uploaded Replit Expo app.
+A new Flutter project.
 
-## Included screens
-- Home
-- Diary
-- Progress
-- Input 1
-- Input 2
-- Input 3
-- Exercise 1
+## Getting Started
 
-## Notes
-- This is a Flutter translation of the UI flow and sample logic from the Expo project.
-- It uses local sample data only.
-- Navigation is implemented with Flutter named routes.
-- The Android/iOS/web folders can be generated on your machine by running:
+This project is a starting point for a Flutter application.
 
-```bash
-flutter create .
-```
+A few resources to get you started if this is your first Flutter project:
 
-Run that inside this folder **only if** Flutter complains those platform folders are missing.
-After that, keep the generated `lib/`, `assets/`, and `pubspec.yaml` from this project.
+- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
 
-## Run
-```bash
-flutter pub get
-flutter run
-```
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.
