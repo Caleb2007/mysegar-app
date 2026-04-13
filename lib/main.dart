@@ -2,15 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_state.dart';
 import 'screens/app_shell_screen.dart';
-import 'screens/diary_screen.dart';
-import 'screens/exercise_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/input1_screen.dart';
-import 'screens/input2_screen.dart';
-import 'screens/input3_screen.dart';
-import 'screens/ml_demo_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/progress_screen.dart';
 import 'screens/profile_setup_screen.dart';
 import 'services/local_storage_service.dart';
 import 'services/tflite_service.dart';
@@ -75,7 +67,13 @@ class _MySegarAppState extends State<MySegarApp> {
                     ),
                   );
                 }
-                if (!_state.hasSeenOnboarding) return const OnboardingScreen();
+                if (!_state.hasSeenOnboarding) {
+                  return OnboardingScreen(
+                    onGetStarted: () {
+                      _state.completeOnboarding();
+                    },
+                  );
+                }
                 if (_state.needsProfileSetup) return const ProfileSetupScreen();
                 return const AppShellScreen();
               },
