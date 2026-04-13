@@ -99,15 +99,25 @@ class _Input1ScreenState extends State<Input1Screen> {
 
   DishDefinition? _findMatchingDish(String prediction) {
     final state = AppScope.of(context);
-    final lowerPrediction = prediction.toLowerCase();
+    final lowerPrediction = prediction.toLowerCase().trim();
     
-    // Try exact match on dish name
-    for (final dish in state.dishes) {
-      if (dish.name.toLowerCase().contains(lowerPrediction) || lowerPrediction.contains(dish.name.toLowerCase())) {
-        return dish;
-      }
+    // Direct mapping for known predictions
+    switch (lowerPrediction) {
+      case 'nasi lemak':
+        return state.dishes.firstWhere((dish) => dish.id == 'nasi-lemak');
+      case 'chicken rice':
+        return state.dishes.firstWhere((dish) => dish.id == 'chicken-rice');
+      case 'egg':
+        return state.dishes.firstWhere((dish) => dish.id == 'egg-dish');
+      default:
+        // Fallback: try fuzzy matching on dish name
+        for (final dish in state.dishes) {
+          if (dish.name.toLowerCase().contains(lowerPrediction) || lowerPrediction.contains(dish.name.toLowerCase())) {
+            return dish;
+          }
+        }
+        return null;
     }
-    return null;
   }
 
   @override
@@ -185,6 +195,37 @@ class _Input1ScreenState extends State<Input1Screen> {
                 ]),
               ),
               const SizedBox(height: 18),
+              
+              // Confirm button for matched dish
+              if (_selectedDish != null) ...[
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    style: FilledButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 18)),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => Input2Screen(date: widget.date, mealType: widget.mealType, dish: _selectedDish!, isPhotoFlow: true),
+                        ),
+                      );
+                    },
+                    child: const Text('Confirm & Continue', style: TextStyle(fontWeight: FontWeight.w800)),
+                  ),
+                ),
+                const SizedBox(height: 18),
+              ],
+              
+              // Message for unmatched prediction
+              if (_mlResult != null && _selectedDish == null) ...[
+                CardShell(
+                  child: Text(
+                    'Prediction "${_mlResult!['label']}" not matched to database yet. Please select manually from the list below.',
+                    style: const TextStyle(color: AppColors.mutedForeground),
+                  ),
+                ),
+                const SizedBox(height: 18),
+              ],
             ],
             
             if (_mlStatusMessage != null && _mlResult == null) ...[

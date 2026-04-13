@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 enum MealType { breakfast, lunch, dinner, supper }
 
 extension MealTypeX on MealType {

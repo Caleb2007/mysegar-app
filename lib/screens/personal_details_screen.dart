@@ -16,23 +16,28 @@ class _PersonalDetailsScreenState extends State<PersonalDetailsScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _targetController;
   late String _imagePath;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    final profile = AppScope.of(context).profile;
-    _nameController = TextEditingController(text: profile.name);
-    _targetController = TextEditingController(text: profile.targetWeightKg.toStringAsFixed(1));
-    _imagePath = profile.profileImagePath;
+    _nameController = TextEditingController();
+    _targetController = TextEditingController();
+    _imagePath = '';
   }
 
   @override
-  void dispose() {
-    _nameController.dispose();
-    _targetController.dispose();
-    super.dispose();
-  }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
+    if (_initialized) return;
+    _initialized = true;
+
+    final profile = AppScope.of(context).profile;
+    _nameController.text = profile.name;
+    _targetController.text = profile.targetWeightKg.toStringAsFixed(1);
+    _imagePath = profile.profileImagePath;
+  }
   @override
   Widget build(BuildContext context) {
     final profile = AppScope.of(context).profile;

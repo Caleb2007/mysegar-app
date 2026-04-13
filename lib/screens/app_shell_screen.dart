@@ -43,7 +43,7 @@ class _AppShellScreenState extends State<AppShellScreen> {
           PageView(
             controller: _controller,
             onPageChanged: (value) => setState(() => _index = value),
-            children: const [HomeScreen(), DiaryScreen(), ProgressScreen()],
+            children: [const HomeScreen(), DiaryScreen(), const ProgressScreen()],
           ),
           Positioned(
             left: 0,

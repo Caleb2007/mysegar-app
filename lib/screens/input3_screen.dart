@@ -4,6 +4,7 @@ import '../app_state.dart';
 import '../models/meal_entry.dart';
 import '../theme/app_colors.dart';
 import '../widgets/common.dart';
+import 'app_shell_screen.dart';
 
 class Input3Screen extends StatelessWidget {
   final DateTime date;
@@ -40,12 +41,28 @@ class Input3Screen extends StatelessWidget {
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 18)),
               onPressed: () async {
                 if (originalEntry == null) {
-                  await state.addMeal(date: date, mealType: mealType, dish: dish, ingredients: ingredients);
+                  await state.addMeal(
+                    date: date,
+                    mealType: mealType,
+                    dish: dish,
+                    ingredients: ingredients,
+                  );
                 } else {
-                  await state.updateMeal(original: originalEntry!, dish: dish, ingredients: ingredients);
+                  await state.updateMeal(
+                    original: originalEntry!,
+                    dish: dish,
+                    ingredients: ingredients,
+                  );
                 }
+
                 if (!context.mounted) return;
-                Navigator.popUntil(context, (route) => route.isFirst || route.settings.name == null);
+
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(
+                    builder: (_) => const AppShellScreen(initialIndex: 1),
+                  ),
+                  (route) => false,
+                );
               },
               child: const Text('Finish', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
