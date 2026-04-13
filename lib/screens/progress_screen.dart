@@ -1,229 +1,148 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
+import '../app_state.dart';
 import '../theme/app_colors.dart';
-import '../widgets/bottom_nav.dart';
+import '../widgets/common.dart';
 
-class ProgressScreen extends StatelessWidget {
-  static const routeName = '/progress';
-
+class ProgressScreen extends StatefulWidget {
   const ProgressScreen({super.key});
 
   @override
+  State<ProgressScreen> createState() => _ProgressScreenState();
+}
+
+class _ProgressScreenState extends State<ProgressScreen> {
+  int _days = 7;
+  static const _supportiveMessages = [
+    'A calm week of progress — keep it going.',
+    'Steady choices build strong momentum.',
+    'You are showing real consistency this week.',
+    'Good calorie control — one step at a time.',
+    'Balanced logging is helping your progress.',
+    'Nice work staying aware of your intake.',
+    'A thoughtful week — keep trusting the process.',
+  ];
+
+  @override
   Widget build(BuildContext context) {
-    final weightData = const [
-      ('Mon', 74.8),
-      ('Tue', 74.6),
-      ('Wed', 74.5),
-      ('Thu', 74.3),
-      ('Fri', 74.2),
-      ('Sat', 74.0),
-      ('Sun', 73.8),
-    ];
+    final state = AppScope.of(context);
+    final weights = state.weightRange(days: _days);
+    final startWeight = weights.first.weightKg;
+    final currentWeight = state.weightForDate(DateTime.now())?.weightKg ?? state.lastKnownWeightBefore(DateTime.now());
+    final targetWeight = state.profile.targetWeightKg;
+    final weeklyAvgCal = state.weeklyAverageCalories();
+    final targetCal = state.profile.dailyTargetCalories;
+    final streak = state.loggingStreak();
+    final delta = currentWeight - startWeight;
+    final lostSoFar = max(0, startWeight - currentWeight);
+    final totalToLose = max(0.1, startWeight - targetWeight);
+    final goalPct = (lostSoFar / totalToLose).clamp(0.0, 1.0);
+    final calPct = targetCal <= 0 ? 0.0 : (weeklyAvgCal / targetCal).clamp(0.0, 1.0);
+    final currentDisplayWeight = state.latestWeightEntry()?.weightKg ?? state.profile.weightKg;
+    final todayIndex = DateTime.now().weekday - 1;
 
-    const currentWeight = 73.8;
-    const targetWeight = 68.0;
-    const startWeight = 77.0;
-    const weeklyAvgCal = 1320;
-    const targetCal = 1800;
-    const streak = 4;
-
-    final lostSoFar = startWeight - currentWeight;
-    final totalToLose = startWeight - targetWeight;
-    final goalPct = (lostSoFar / totalToLose).clamp(0, 1).toDouble();
-    final calPct = (weeklyAvgCal / targetCal).clamp(0, 1).toDouble();
-
-    return Scaffold(
-      body: Stack(
-        children: [
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 140),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Progress', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 16),
-                  _card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _cardHeader(Icons.trending_down_outlined, AppColors.primary.withOpacity(0.12), AppColors.primary, 'Weight Trend', 'Last 7 days', trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.12), borderRadius: BorderRadius.circular(999)),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.arrow_downward, size: 12, color: AppColors.primary),
-                              SizedBox(width: 4),
-                              Text('1.0 kg', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
-                            ],
-                          ),
-                        )),
-                        const SizedBox(height: 16),
-                        SizedBox(height: 150, child: _WeightChart(data: weightData)),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            _WeightStat(value: '74.8 kg', label: '7 days ago', color: AppColors.foreground, alignEnd: false),
-                            Icon(Icons.arrow_forward, color: AppColors.mutedForeground),
-                            _WeightStat(value: '73.8 kg', label: 'Today', color: AppColors.primary, alignEnd: true),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _cardHeader(Icons.local_fire_department_outlined, AppColors.orange.withOpacity(0.12), AppColors.orange, 'Weekly Average Calories', 'vs. daily target of $targetCal kcal'),
-                        const SizedBox(height: 14),
-                        const Text.rich(
-                          TextSpan(
-                            text: '$weeklyAvgCal ',
-                            style: TextStyle(fontSize: 36, fontWeight: FontWeight.w700, color: AppColors.orange),
-                            children: [
-                              TextSpan(text: 'kcal/day', style: TextStyle(fontSize: 16, color: AppColors.mutedForeground, fontWeight: FontWeight.w500)),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        _bar(calPct, AppColors.orange),
-                        const SizedBox(height: 8),
-                        Text('${(calPct * 100).round()}% of daily target — good calorie control!', style: const TextStyle(color: AppColors.mutedForeground)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _card(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _cardHeader(Icons.emoji_events_outlined, const Color(0x229B59B6), const Color(0xFF9B59B6), 'Goal Progress', 'Weight loss journey', trailing: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(color: const Color(0x229B59B6), borderRadius: BorderRadius.circular(999)),
-                          child: Text('${(goalPct * 100).round()}%', style: const TextStyle(color: Color(0xFF9B59B6), fontWeight: FontWeight.w600)),
-                        )),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            const _WeightStat(value: '73.8 kg', label: 'Current', color: AppColors.foreground, alignEnd: false),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  _bar(goalPct, const Color(0xFF9B59B6)),
-                                  const SizedBox(height: 6),
-                                  Text('${(currentWeight - targetWeight).toStringAsFixed(1)} kg to go', style: const TextStyle(color: AppColors.mutedForeground)),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            const _WeightStat(value: '68.0 kg', label: 'Target', color: Color(0xFF9B59B6), alignEnd: true),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _card(
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(color: const Color(0xFFEAF7ED), borderRadius: BorderRadius.circular(18)),
-                          child: const Icon(Icons.local_fire_department_outlined, color: AppColors.primary),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Consistency Streak', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 4),
-                              Text('$streak days logged in a row', style: const TextStyle(color: AppColors.mutedForeground)),
-                            ],
-                          ),
-                        ),
-                        Text('$streak🔥', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w700, color: AppColors.primary)),
-                      ],
-                    ),
-                  ),
-                ],
+    return GradientScaffold(
+      tone: PageTone.purple,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text('Progress', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
+          const SizedBox(height: 16),
+          CardShell(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.primarySoft, borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.show_chart_rounded, color: AppColors.primary)),
+                const SizedBox(width: 12),
+                const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Weight Trend', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)), Text('See your recent weight pattern', style: TextStyle(color: AppColors.mutedForeground))])),
+                _DeltaBadge(delta: delta),
+              ]),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(color: AppColors.secondary, borderRadius: BorderRadius.circular(999)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    _segButton('7D', _days == 7, () => setState(() => _days = 7)),
+                    _segButton('30D', _days == 30, () => setState(() => _days = 30)),
+                  ]),
+                ),
               ),
-            ),
+              const SizedBox(height: 18),
+              SizedBox(height: 180, child: _WeightLineChart(data: weights, days: _days)),
+              const SizedBox(height: 14),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                _WeightStat(value: '${startWeight.toStringAsFixed(1)} kg', label: _days == 7 ? '7 days ago' : '30 days ago', color: AppColors.foreground),
+                const Icon(Icons.arrow_forward_rounded, color: AppColors.mutedForeground),
+                _WeightStat(value: '${currentWeight.toStringAsFixed(1)} kg', label: 'Today', color: AppColors.primary, alignEnd: true),
+              ]),
+            ]),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: BottomNav(
-              active: AppTab.progress,
-              onTap: (tab) {
-                if (tab == AppTab.home) Navigator.pushReplacementNamed(context, '/');
-                if (tab == AppTab.diary) Navigator.pushReplacementNamed(context, '/diary');
-              },
-            ),
+          const SizedBox(height: 16),
+          CardShell(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.orangeSoft, borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.local_fire_department_outlined, color: AppColors.orange)), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Weekly Average Calories', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)), Text('vs. daily target of $targetCal kcal', style: const TextStyle(color: AppColors.mutedForeground))]))]),
+              const SizedBox(height: 16),
+              Text('$weeklyAvgCal', style: const TextStyle(fontSize: 52, fontWeight: FontWeight.w800, color: AppColors.orange)),
+              const Text('kcal/day', style: TextStyle(color: AppColors.mutedForeground, fontSize: 18, fontWeight: FontWeight.w600)),
+              const SizedBox(height: 12),
+              _progressBar(calPct, AppColors.orange),
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(color: AppColors.orangeSoft, borderRadius: BorderRadius.circular(14)),
+                child: Text('${(calPct * 100).round()}% of daily target — ${_supportiveMessages[todayIndex]}', style: const TextStyle(color: AppColors.foreground, fontWeight: FontWeight.w700)),
+              ),
+            ]),
           ),
-        ],
+          const SizedBox(height: 16),
+          CardShell(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [Container(width: 42, height: 42, decoration: BoxDecoration(color: AppColors.purpleSoft, borderRadius: BorderRadius.circular(14)), child: const Icon(Icons.emoji_events_outlined, color: AppColors.purple)), const SizedBox(width: 12), const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Goal Progress', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)), Text('Weight journey', style: TextStyle(color: AppColors.mutedForeground))])), Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: AppColors.purpleSoft, borderRadius: BorderRadius.circular(999)), child: Text('${(goalPct * 100).round()}%', style: const TextStyle(color: AppColors.purple, fontWeight: FontWeight.w800)))]),
+              const SizedBox(height: 18),
+              Row(children: [
+                _WeightStat(value: '${currentDisplayWeight.toStringAsFixed(1)} kg', label: 'Current', color: AppColors.foreground),
+                const SizedBox(width: 12),
+                Expanded(child: Column(children: [_progressBar(goalPct, AppColors.purple), const SizedBox(height: 8), Text('${(currentDisplayWeight - targetWeight).abs().toStringAsFixed(1)} kg to go', style: const TextStyle(color: AppColors.mutedForeground))])),
+                const SizedBox(width: 12),
+                _WeightStat(value: '${targetWeight.toStringAsFixed(1)} kg', label: 'Target', color: AppColors.purple, alignEnd: true),
+              ]),
+            ]),
+          ),
+          const SizedBox(height: 22),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [Color(0xFFFFF5E4), Color(0xFFFFFBF1)]),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: const Color(0xFFF2E2BD)),
+            ),
+            child: Row(children: [
+              Container(width: 58, height: 58, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)), child: const Icon(Icons.local_fire_department_rounded, color: AppColors.orange, size: 30)),
+              const SizedBox(width: 14),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Consistency Streak', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800)), const SizedBox(height: 4), Text('$streak days logged in a row', style: const TextStyle(color: AppColors.mutedForeground, fontSize: 16))])),
+              Text('$streak', style: const TextStyle(fontSize: 42, fontWeight: FontWeight.w900, color: AppColors.orange)),
+            ]),
+          ),
+        ]),
       ),
     );
   }
 
-  Widget _card({required Widget child}) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: child,
-    );
-  }
-
-  Widget _cardHeader(IconData icon, Color bgColor, Color iconColor, String title, String subtitle, {Widget? trailing}) {
-    return Row(
-      children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, color: iconColor),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
-              Text(subtitle, style: const TextStyle(color: AppColors.mutedForeground)),
-            ],
-          ),
-        ),
-        if (trailing != null) trailing,
-      ],
-    );
-  }
-
-  Widget _bar(double pct, Color color) {
-    return ClipRRect(
+  Widget _segButton(String label, bool active, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
       borderRadius: BorderRadius.circular(999),
-      child: SizedBox(
-        height: 10,
-        child: Stack(
-          children: [
-            Container(color: AppColors.secondary),
-            FractionallySizedBox(widthFactor: pct, child: Container(color: color)),
-          ],
-        ),
-      ),
+      child: AnimatedContainer(duration: const Duration(milliseconds: 220), padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10), decoration: BoxDecoration(color: active ? AppColors.primary : Colors.transparent, borderRadius: BorderRadius.circular(999)), child: Text(label, style: TextStyle(color: active ? Colors.white : AppColors.mutedForeground, fontWeight: FontWeight.w800))),
     );
   }
+
+  Widget _progressBar(double pct, Color color) => ClipRRect(borderRadius: BorderRadius.circular(999), child: SizedBox(height: 12, child: Stack(children: [Container(color: AppColors.secondary), FractionallySizedBox(widthFactor: pct, child: Container(color: color))])));
 }
 
 class _WeightStat extends StatelessWidget {
@@ -231,107 +150,100 @@ class _WeightStat extends StatelessWidget {
   final String label;
   final Color color;
   final bool alignEnd;
-
-  const _WeightStat({required this.value, required this.label, required this.color, required this.alignEnd});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-      children: [
-        Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: color)),
-        Text(label, style: const TextStyle(color: AppColors.mutedForeground)),
-      ],
-    );
-  }
-}
-
-class _WeightChart extends StatelessWidget {
-  final List<(String, double)> data;
-
-  const _WeightChart({required this.data});
+  const _WeightStat({required this.value, required this.label, required this.color, this.alignEnd = false});
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final minW = data.map((d) => d.$2).reduce((a, b) => a < b ? a : b) - 0.5;
-        final maxW = data.map((d) => d.$2).reduce((a, b) => a > b ? a : b) + 0.5;
-        final range = maxW - minW;
-        final width = constraints.maxWidth;
-        final chartHeight = 100.0;
-        final points = <Offset>[];
-        for (var i = 0; i < data.length; i++) {
-          final x = (i / (data.length - 1)) * width;
-          final y = chartHeight - (((data[i].$2 - minW) / range) * chartHeight);
-          points.add(Offset(x, y));
-        }
-        return SizedBox(
-          height: 140,
-          child: Stack(
-            children: [
-              ...[0.0, 0.33, 0.66, 1.0].map((pct) => Positioned(
-                    top: pct * chartHeight,
-                    left: 0,
-                    right: 0,
-                    child: Container(height: 1, color: AppColors.border),
-                  )),
-              CustomPaint(size: Size(width, chartHeight), painter: _WeightChartPainter(points)),
-              ...List.generate(points.length, (i) {
-                final point = points[i];
-                return Positioned(
-                  left: point.dx - 5,
-                  top: point.dy - 5,
-                  child: Container(
-                    width: 10,
-                    height: 10,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                  ),
-                );
-              }),
-              Positioned(
-                top: 112,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: data.map((d) => Text(d.$1, style: const TextStyle(color: AppColors.mutedForeground, fontSize: 12))).toList(),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
+    return Column(crossAxisAlignment: alignEnd ? CrossAxisAlignment.end : CrossAxisAlignment.start, children: [Text(value, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: color)), Text(label, style: const TextStyle(color: AppColors.mutedForeground))]);
   }
 }
 
-class _WeightChartPainter extends CustomPainter {
+class _DeltaBadge extends StatelessWidget {
+  final double delta;
+  const _DeltaBadge({required this.delta});
+
+  @override
+  Widget build(BuildContext context) {
+    final improved = delta < 0;
+    final neutral = delta == 0;
+    final bg = neutral ? AppColors.secondary : improved ? AppColors.primarySoft : AppColors.redSoft;
+    final fg = neutral ? AppColors.mutedForeground : improved ? AppColors.primary : AppColors.red;
+    final arrow = neutral ? '•' : improved ? '↓' : '↑';
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)), child: Text('$arrow ${delta.abs().toStringAsFixed(1)} kg', style: TextStyle(color: fg, fontWeight: FontWeight.w800)));
+  }
+}
+
+class _WeightLineChart extends StatelessWidget {
+  final List<dynamic> data;
+  final int days;
+  const _WeightLineChart({required this.data, required this.days});
+
+  @override
+  Widget build(BuildContext context) {
+    if (data.isEmpty) return const SizedBox();
+    final weights = data.map((e) => e.weightKg as double).toList();
+    final minW = weights.reduce(min);
+    final maxW = weights.reduce(max);
+    final padding = max(0.6, (maxW - minW) * 0.25);
+    final scaleMax = maxW + padding;
+    final scaleMin = minW - padding;
+    final range = max(0.1, scaleMax - scaleMin);
+    final scaleValues = List.generate(4, (i) => scaleMax - (range / 3) * i);
+    return LayoutBuilder(builder: (context, constraints) {
+      final chartWidth = constraints.maxWidth - 56;
+      final chartHeight = constraints.maxHeight;
+      final stepX = data.length == 1 ? 0.0 : chartWidth / (data.length - 1);
+      final points = <Offset>[];
+      for (var i = 0; i < data.length; i++) {
+        final normalized = (data[i].weightKg - scaleMin) / range;
+        points.add(Offset(stepX * i, chartHeight - 28 - normalized * (chartHeight - 40)));
+      }
+      final labels = <Widget>[];
+      for (var i = 0; i < data.length; i++) {
+        final show = days == 7 || i == 0 || i == data.length - 1 || i % 5 == 0;
+        labels.add(Expanded(child: Center(child: Text(show ? (days == 7 ? DateFormat('E').format(data[i].date) : DateFormat('d').format(data[i].date)) : '', style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground)))));
+      }
+      return Row(children: [
+        Expanded(
+          child: Column(children: [
+            Expanded(child: CustomPaint(size: Size(chartWidth, chartHeight), painter: _WeightPainter(points: points, width: chartWidth, height: chartHeight - 28))),
+            const SizedBox(height: 8),
+            Row(children: labels),
+          ]),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(width: 48, child: Column(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: scaleValues.map((v) => Text(v.toStringAsFixed(1), style: const TextStyle(fontSize: 12, color: AppColors.mutedForeground))).toList())),
+      ]);
+    });
+  }
+}
+
+class _WeightPainter extends CustomPainter {
   final List<Offset> points;
-
-  _WeightChartPainter(this.points);
+  final double width;
+  final double height;
+  const _WeightPainter({required this.points, required this.width, required this.height});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.primary
-      ..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke;
-    final path = Path();
-    for (var i = 0; i < points.length; i++) {
-      if (i == 0) {
-        path.moveTo(points[i].dx, points[i].dy);
-      } else {
-        path.lineTo(points[i].dx, points[i].dy);
-      }
+    final grid = Paint()..color = AppColors.border..strokeWidth = 1;
+    for (int i = 0; i < 4; i++) {
+      final y = (height / 3) * i;
+      canvas.drawLine(Offset(0, y), Offset(width, y), grid);
     }
-    canvas.drawPath(path, paint);
+    final line = Paint()..color = AppColors.primary..strokeWidth = 4..style = PaintingStyle.stroke..strokeCap = StrokeCap.round..strokeJoin = StrokeJoin.round;
+    final path = Path()..moveTo(points.first.dx, points.first.dy);
+    for (final p in points.skip(1)) {
+      path.lineTo(p.dx, p.dy);
+    }
+    canvas.drawPath(path, line);
+    final pointFill = Paint()..color = AppColors.primary;
+    for (final p in points) {
+      canvas.drawCircle(p, 7, pointFill);
+      canvas.drawCircle(p, 3.5, Paint()..color = Colors.white);
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _WeightPainter oldDelegate) => oldDelegate.points != points;
 }

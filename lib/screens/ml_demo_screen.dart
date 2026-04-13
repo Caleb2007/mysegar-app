@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-
-import '../services/model_service.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:typed_data';
+import '../services/tflite_service.dart';
 import '../theme/app_colors.dart';
 
 class MlDemoScreen extends StatefulWidget {
@@ -13,22 +14,27 @@ class MlDemoScreen extends StatefulWidget {
 }
 
 class _MlDemoScreenState extends State<MlDemoScreen> {
-  final ModelService _modelService = ModelService();
+  final TFLiteService _tfliteService = TFLiteService();
+  late final ImagePicker _imagePicker;
 
-  ClassificationResult? _result;
+  Map<String, dynamic>? _result;
   String? _statusMessage;
   bool _isInitializing = true;
   bool _isRunningInference = false;
+  Uint8List? _imageBytes;
 
   @override
   void initState() {
     super.initState();
+    _imagePicker = ImagePicker();
     _initializeModel();
   }
 
   Future<void> _initializeModel() async {
     try {
-      await _modelService.loadModel();
+      print('[UI] Starting model initialization...');
+      await _tfliteService.init();
+      print('[UI] Model initialization complete');
 
       if (!mounted) {
         return;
@@ -36,7 +42,7 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
 
       setState(() {
         _statusMessage =
-            'Model ready. Input: ${_modelService.inputShape}, Output: ${_modelService.outputShape}';
+            'Model ready. Input: ${_tfliteService.inputShape}, Output: ${_tfliteService.outputShape}';
         _isInitializing = false;
       });
     } catch (error) {
@@ -52,18 +58,76 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
   }
 
   Future<void> _runSampleInference() async {
-    if (_isRunningInference) {
+    if (_isInitializing || _isRunningInference) {
+      print('[UI] Sample inference blocked: initializing=$_isInitializing, running=$_isRunningInference');
       return;
     }
 
     setState(() {
       _isRunningInference = true;
       _result = null;
-      _statusMessage = 'Running inference on assets/images/chicken-salad.png...';
+      _statusMessage =
+          'Running inference on assets/images/chicken-salad.png...';
     });
 
     try {
-      final result = await _modelService.classifyImageAsset('assets/images/chicken-salad.png');
+      final result = await _tfliteService
+          .classifyImageAsset('assets/images/chicken-salad.png');
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _result = result;
+        _statusMessage = 'Inference completed successfully.';
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _statusMessage = 'Inference failed: $error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRunningInference = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _takePhoto() async {
+    if (_isInitializing || _isRunningInference) {
+      print('[UI] Photo capture blocked: initializing=$_isInitializing, running=$_isRunningInference');
+      return;
+    }
+
+    final XFile? pickedFile = await _imagePicker.pickImage(
+      source: ImageSource.camera,
+    );
+
+    if (pickedFile == null) {
+      return;
+    }
+
+    final bytes = await pickedFile.readAsBytes();
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isRunningInference = true;
+      _imageBytes = bytes;
+      _result = null;
+      _statusMessage = 'Analyzing image with AI...';
+    });
+
+    try {
+      final result = await _tfliteService.classifyImage(bytes);
 
       if (!mounted) {
         return;
@@ -92,7 +156,7 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
 
   @override
   void dispose() {
-    _modelService.dispose();
+    _tfliteService.dispose();
     super.dispose();
   }
 
@@ -122,12 +186,19 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
               const SizedBox(height: 24),
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
-                child: Image.asset(
-                  'assets/images/chicken-salad.png',
-                  height: 220,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: _imageBytes != null
+                    ? Image.memory(
+                        _imageBytes!,
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      )
+                    : Image.asset(
+                        'assets/images/chicken-salad.png',
+                        height: 220,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                      ),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -138,18 +209,40 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
                       ? const SizedBox(
                           width: 18,
                           height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
                         )
                       : const Icon(Icons.science_outlined),
-                  label: Text(_isRunningInference ? 'Running...' : 'Run Sample Inference'),
+                  label: Text(_isRunningInference
+                      ? 'Running...'
+                      : 'Run Sample Inference'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18)),
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: buttonEnabled ? _takePhoto : null,
+                  icon: const Icon(Icons.camera_alt),
+                  label: const Text('Take Photo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              if (_isRunningInference) const LinearProgressIndicator(),
               const SizedBox(height: 20),
               _InfoCard(
                 title: 'Status',
@@ -163,9 +256,46 @@ class _MlDemoScreenState extends State<MlDemoScreen> {
                 title: 'Top Prediction',
                 child: _result == null
                     ? const Text('No inference result yet.')
-                    : Text(
-                        '${_result!.label}\nScore: ${_result!.score.toStringAsFixed(4)}\nClass index: ${_result!.index}',
-                        style: const TextStyle(height: 1.5, fontWeight: FontWeight.w600),
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _result!['label'],
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Confidence: ${((_result!['confidence'] as double) * 100).toStringAsFixed(2)}%',
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: _result!['confidence'] as double,
+                              minHeight: 12,
+                              backgroundColor: Colors.grey[300],
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                (_result!['confidence'] as double) > 0.7
+                                    ? Colors.green
+                                    : (_result!['confidence'] as double) > 0.4
+                                        ? Colors.orange
+                                        : Colors.red,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Class index: ${_result!['index']}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
               ),
             ],
