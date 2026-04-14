@@ -60,10 +60,16 @@ class _MySegarAppState extends State<MySegarApp> {
               builder: (context, snapshot) {
                 if (snapshot.connectionState != ConnectionState.done) {
                   return Container(
-                    decoration: BoxDecoration(gradient: AppColors.pageGradient(PageTone.green)),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.pageGradient(PageTone.green),
+                    ),
                     child: const Scaffold(
                       backgroundColor: Colors.transparent,
-                      body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                      body: Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      ),
                     ),
                   );
                 }

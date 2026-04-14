@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/bottom_nav.dart';
 import 'diary_screen.dart';
+import 'growth_timeline_screen.dart';
 import 'home_screen.dart';
 import 'progress_screen.dart';
 
@@ -30,8 +31,13 @@ class _AppShellScreenState extends State<AppShellScreen> {
       AppTab.home => 0,
       AppTab.diary => 1,
       AppTab.progress => 2,
+      AppTab.growth => 3,
     };
-    _controller.animateToPage(nextIndex, duration: const Duration(milliseconds: 280), curve: Curves.easeOutCubic);
+    _controller.animateToPage(
+      nextIndex,
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -43,16 +49,18 @@ class _AppShellScreenState extends State<AppShellScreen> {
           PageView(
             controller: _controller,
             onPageChanged: (value) => setState(() => _index = value),
-            children: [const HomeScreen(), DiaryScreen(), const ProgressScreen()],
+            children: [
+              const HomeScreen(),
+              DiaryScreen(),
+              const ProgressScreen(),
+              const GrowthTimelineScreen(),
+            ],
           ),
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: BottomNav(
-              active: AppTab.values[_index],
-              onTap: _onTap,
-            ),
+            child: BottomNav(active: AppTab.values[_index], onTap: _onTap),
           ),
         ],
       ),
