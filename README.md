@@ -1,17 +1,12 @@
-# mysegar_new
 
-A new Flutter project.
+# MySegar
+A mobile app developed by a team of Malaysian students for the National AI Competition of Malaysia **(NAIC)** that is designed to track calorie data using onboard AI that can discern specific food through basic image recognition.
 
-## Getting Started
+Additional features include: 
+- workout tracking
+- plant growth-based motivation
+- weight tracking
 
-This project is a starting point for a Flutter application.
+Currently in beta, not fully launched for public use.
 
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+**Licensed MIT**
