@@ -26,14 +26,15 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(seconds: _activeDurationSeconds),
-      vsync: this,
-    )..addStatusListener((status) {
-        if (status == AnimationStatus.completed && !_isHoldingAtEnd) {
-          _holdAtEnd();
-        }
-      });
+    _animationController =
+        AnimationController(
+          duration: const Duration(seconds: _activeDurationSeconds),
+          vsync: this,
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed && !_isHoldingAtEnd) {
+            _holdAtEnd();
+          }
+        });
 
     _animationController.forward();
     _timer = Timer.periodic(
@@ -70,8 +71,8 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
     final day = cyclePositionMs >= _activeDurationSeconds * 1000
         ? 100
         : ((cyclePositionMs / (_activeDurationSeconds * 1000.0)) * 100)
-            .ceil()
-            .clamp(1, 100);
+              .ceil()
+              .clamp(1, 100);
 
     if (day != _currentDay) {
       setState(() => _currentDay = day);
@@ -86,7 +87,10 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFFa8e063), Color(0xFF56ab2f)],
+            colors: [
+              Color.fromARGB(255, 196, 217, 238),
+              Color.fromARGB(255, 112, 234, 247),
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -98,6 +102,29 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
 
             return Stack(
               children: [
+                Positioned(
+                  left: (constraints.maxWidth - treeWidth) / 2 - 200,
+                  bottom: (constraints.maxHeight - treeHeight) / 2 - 50,
+                  child: Container(
+                    width: 720,
+                    height: 300,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF56ab2f), Color(0xFFa8e063)],
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x26000000),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 Center(
                   child: SizedBox(
                     width: treeWidth,
@@ -118,16 +145,16 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
                       'Day $_currentDay',
                       style:
                           Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                shadows: const [
-                                  Shadow(
-                                    color: Colors.black54,
-                                    offset: Offset(0, 2),
-                                    blurRadius: 8,
-                                  ),
-                                ],
-                              ) ??
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black54,
+                                offset: Offset(0, 2),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ) ??
                           const TextStyle(
                             fontSize: 40,
                             fontWeight: FontWeight.bold,
