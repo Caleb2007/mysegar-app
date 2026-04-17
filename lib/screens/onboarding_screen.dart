@@ -54,7 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   child: Row(
                     children: [
                       Image.asset(
-                        'assets/images/logo.png',
+                        'assets/images/app_logo.png',
                         width: 34,
                         height: 34,
                       ),
@@ -99,7 +99,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             ),
                             child: Padding(
                               padding: const EdgeInsets.all(28),
-                              child: Image.asset('assets/images/logo.png'),
+                              child: Image.asset('assets/images/app_logo.png'),
                             ),
                           ),
                           const SizedBox(height: 34),

@@ -2,7 +2,7 @@ flutter/ephemeral/
 
 # Visual Studio user-specific files.
 *.suo
-*.user
+*.userd
 *.userosscache
 *.sln.docstates
 

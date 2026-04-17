@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-enum AppTab { home, diary, progress }
+enum AppTab { home, diary, progress, growth }
 
 class BottomNav extends StatelessWidget {
   final AppTab active;
@@ -19,7 +19,13 @@ class BottomNav extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.95),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: AppColors.border),
-        boxShadow: const [BoxShadow(color: Color(0x12000000), blurRadius: 14, offset: Offset(0, 4))],
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x12000000),
+            blurRadius: 14,
+            offset: Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -27,6 +33,7 @@ class BottomNav extends StatelessWidget {
           _item(AppTab.home, Icons.home_rounded, 'Home'),
           _item(AppTab.diary, Icons.menu_book_rounded, 'Diary'),
           _item(AppTab.progress, Icons.bar_chart_rounded, 'Progress'),
+          _item(AppTab.growth, Icons.eco, 'Growth'),
         ],
       ),
     );
@@ -42,9 +49,19 @@ class BottomNav extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: selected ? AppColors.primary : AppColors.mutedForeground),
+            Icon(
+              icon,
+              color: selected ? AppColors.primary : AppColors.mutedForeground,
+            ),
             const SizedBox(height: 4),
-            Text(label, style: TextStyle(fontSize: 12, color: selected ? AppColors.primary : AppColors.mutedForeground, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: selected ? AppColors.primary : AppColors.mutedForeground,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
           ],
         ),
       ),
