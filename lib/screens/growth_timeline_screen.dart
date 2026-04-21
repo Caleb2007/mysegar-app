@@ -119,27 +119,6 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Plant Growth Day $_growthDay / 100',
-                          style:
-                              Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                shadows: const [
-                                  Shadow(
-                                    color: Colors.black54,
-                                    offset: Offset(0, 2),
-                                    blurRadius: 8,
-                                  ),
-                                ],
-                              ) ??
-                              const TextStyle(
-                                fontSize: 40,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
                           'Successful Days: $_successfulDays',
                           style:
                               Theme.of(context).textTheme.titleLarge?.copyWith(

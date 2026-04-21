@@ -283,10 +283,10 @@ class AppState extends ChangeNotifier {
 
   Future<void> _pruneOldData({required bool save}) async {
     final today = _normalizeDate(DateTime.now());
-    final mealCutoff = today.subtract(const Duration(days: 6));
+    final diaryHistoryCutoff = today.subtract(const Duration(days: 29));
     final weightCutoff = today.subtract(const Duration(days: 29));
-    _meals = _meals.where((entry) => !entry.date.isBefore(mealCutoff)).toList();
-    _exercises = _exercises.where((entry) => !entry.date.isBefore(mealCutoff)).toList();
+    _meals = _meals.where((entry) => !entry.date.isBefore(diaryHistoryCutoff)).toList();
+    _exercises = _exercises.where((entry) => !entry.date.isBefore(diaryHistoryCutoff)).toList();
     _weights = _weights.where((entry) => !entry.date.isBefore(weightCutoff)).toList();
     if (save) {
       await _storageService.saveMeals(_meals);

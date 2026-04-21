@@ -36,7 +36,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   DateTime _normalizeDate(DateTime date) => DateTime(date.year, date.month, date.day);
-  List<DateTime> get _weekDates => List.generate(7, (index) => _normalizeDate(DateTime.now()).subtract(Duration(days: 6 - index)));
+  List<DateTime> get _diaryDates => List.generate(30, (index) => _normalizeDate(DateTime.now()).subtract(Duration(days: 29 - index)));
 
   void _syncWeightController() {
     final state = AppScope.of(context);
@@ -64,7 +64,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
           const SizedBox(height: 14),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Row(children: _weekDates.map((date) {
+            child: Row(children: _diaryDates.map((date) {
               final selected = AppState.isSameDate(date, selectedDate);
               final hasData = state.mealsForDate(date).isNotEmpty || state.exerciseEntriesForDate(date).isNotEmpty || state.weightForDate(date) != null;
               return Padding(
