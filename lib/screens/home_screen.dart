@@ -31,7 +31,16 @@ class HomeScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(children: const [Icon(Icons.eco_rounded, color: AppColors.primary, size: 28), SizedBox(width: 10), Text('MySegar', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.primary))]),
+              Row(children: [
+                Image.asset(
+                  'assets/images/app_logo.png',
+                  width: 34,
+                  height: 34,
+                  fit: BoxFit.contain,
+                ),
+                const SizedBox(width: 10),
+                const Text('MySegar', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: AppColors.primary))
+              ]),
               ProfileAvatar(name: state.profile.name, imagePath: state.profile.profileImagePath, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PersonalDetailsScreen())), showEditHint: true),
             ],
           ),

@@ -225,6 +225,44 @@ class AppState extends ChangeNotifier {
     return streak;
   }
 
+  bool isSuccessfulCalorieDay(DateTime date) {
+    final mealList = mealsForDate(date);
+    if (mealList.isEmpty) return false;
+    
+    final summary = summaryForDate(date);
+    final target = summary.dailyTarget;
+    if (target <= 0) return false;
+    
+    final lowerBound = min(1600, target);
+    return summary.netCalories >= lowerBound && summary.netCalories <= target;
+  }
+
+  int successfulCalorieDays({int maxDays = 100}) {
+    final mealsDateSet = <DateTime>{};
+    for (final meal in _meals) {
+      mealsDateSet.add(_normalizeDate(meal.date));
+    }
+    
+    final sortedDates = mealsDateSet.toList()..sort();
+    
+    int count = 0;
+    for (final date in sortedDates) {
+      if (isSuccessfulCalorieDay(date)) {
+        count++;
+        if (count >= maxDays) {
+          return maxDays;
+        }
+      }
+    }
+    
+    return count;
+  }
+
+  int currentPlantGrowthDay() {
+    final successDays = successfulCalorieDays(maxDays: 100);
+    return successDays <= 0 ? 1 : successDays.clamp(1, 100);
+  }
+
   Future<void> _persistMeals() async {
     await _pruneOldData(save: false);
     await _storageService.saveMeals(_meals);
@@ -245,10 +283,10 @@ class AppState extends ChangeNotifier {
 
   Future<void> _pruneOldData({required bool save}) async {
     final today = _normalizeDate(DateTime.now());
-    final mealCutoff = today.subtract(const Duration(days: 6));
+    final diaryHistoryCutoff = today.subtract(const Duration(days: 29));
     final weightCutoff = today.subtract(const Duration(days: 29));
-    _meals = _meals.where((entry) => !entry.date.isBefore(mealCutoff)).toList();
-    _exercises = _exercises.where((entry) => !entry.date.isBefore(mealCutoff)).toList();
+    _meals = _meals.where((entry) => !entry.date.isBefore(diaryHistoryCutoff)).toList();
+    _exercises = _exercises.where((entry) => !entry.date.isBefore(diaryHistoryCutoff)).toList();
     _weights = _weights.where((entry) => !entry.date.isBefore(weightCutoff)).toList();
     if (save) {
       await _storageService.saveMeals(_meals);

@@ -1,7 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+
+import '../app_state.dart';
 
 class GrowthTimelineScreen extends StatefulWidget {
   const GrowthTimelineScreen({super.key});
@@ -12,71 +12,44 @@ class GrowthTimelineScreen extends StatefulWidget {
 
 class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
     with TickerProviderStateMixin {
-  late final Timer _timer;
-  late final AnimationController _animationController;
-  bool _isHoldingAtEnd = false;
-  int _currentDay = 1;
-
-  static const _activeDurationSeconds = 10;
-  static const _pauseDurationSeconds = 2;
-  static const _cycleDurationSeconds =
-      _activeDurationSeconds + _pauseDurationSeconds;
-  static const _updateIntervalMs = 200;
+  late AnimationController _animationController;
+  int _growthDay = 1;
+  int _successfulDays = 0;
 
   @override
   void initState() {
     super.initState();
-    _animationController =
-        AnimationController(
-          duration: const Duration(seconds: _activeDurationSeconds),
-          vsync: this,
-        )..addStatusListener((status) {
-          if (status == AnimationStatus.completed && !_isHoldingAtEnd) {
-            _holdAtEnd();
-          }
-        });
-
-    _animationController.forward();
-    _timer = Timer.periodic(
-      const Duration(milliseconds: _updateIntervalMs),
-      _updateDay,
+    _animationController = AnimationController(
+      vsync: this,
     );
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _updatePlantProgress();
+  }
+
+  void _updatePlantProgress() {
+    final state = AppScope.of(context);
+    final growthDay = state.currentPlantGrowthDay();
+    final successDays = state.successfulCalorieDays(maxDays: 100);
+    
+    setState(() {
+      _growthDay = growthDay;
+      _successfulDays = successDays;
+    });
+    
+    // Set the animation controller value based on growth day
+    // Day 1 => progress 0.0, Day 100 => progress 1.0
+    final progress = (_growthDay - 1) / 99.0;
+    _animationController.value = progress.clamp(0.0, 1.0);
+  }
+
+  @override
   void dispose() {
-    _timer.cancel();
     _animationController.dispose();
     super.dispose();
-  }
-
-  void _holdAtEnd() {
-    if (!mounted) return;
-    _isHoldingAtEnd = true;
-    Future.delayed(const Duration(seconds: _pauseDurationSeconds), () {
-      if (!mounted) return;
-      _isHoldingAtEnd = false;
-      _animationController.reset();
-      _animationController.forward();
-    });
-  }
-
-  void _updateDay(Timer timer) {
-    if (!mounted) return;
-
-    final elapsedMs = timer.tick * _updateIntervalMs;
-    final cycleMs = _cycleDurationSeconds * 1000;
-    final cyclePositionMs = elapsedMs % cycleMs;
-
-    final day = cyclePositionMs >= _activeDurationSeconds * 1000
-        ? 100
-        : ((cyclePositionMs / (_activeDurationSeconds * 1000.0)) * 100)
-              .ceil()
-              .clamp(1, 100);
-
-    if (day != _currentDay) {
-      setState(() => _currentDay = day);
-    }
   }
 
   @override
@@ -133,6 +106,7 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
                       'assets/animations/tree_growth.json',
                       controller: _animationController,
                       fit: BoxFit.contain,
+                      repeat: false,
                     ),
                   ),
                 ),
@@ -141,25 +115,54 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: Text(
-                      'Day $_currentDay',
-                      style:
-                          Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            shadows: const [
-                              Shadow(
-                                color: Colors.black54,
-                                offset: Offset(0, 2),
-                                blurRadius: 8,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Successful Days: $_successfulDays',
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                shadows: const [
+                                  Shadow(
+                                    color: Colors.black54,
+                                    offset: Offset(0, 1),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ) ??
+                              const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
                               ),
-                            ],
-                          ) ??
-                          const TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  bottom: 40,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Successful day = meal logged and calories within target\nEmpty days do not count.',
+                        textAlign: TextAlign.center,
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Colors.white70,
+                              fontStyle: FontStyle.italic,
+                            ) ??
+                            const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white70,
+                              fontStyle: FontStyle.italic,
+                            ),
+                      ),
                     ),
                   ),
                 ),

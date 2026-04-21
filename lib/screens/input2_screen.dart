@@ -71,6 +71,8 @@ class _Input2ScreenState extends State<Input2Screen> {
                     onEdit: () async {
                       final replacement = await showModalBottomSheet<IngredientDefinition>(
                         context: context,
+                        isScrollControlled: true,
+                        useSafeArea: true,
                         builder: (_) => _IngredientPicker(currentId: entry.value.ingredient.id),
                       );
                       if (replacement != null) {
@@ -121,6 +123,8 @@ class _Input2ScreenState extends State<Input2Screen> {
   Future<void> _addIngredient() async {
     final addition = await showModalBottomSheet<IngredientDefinition>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
       builder: (_) => const _IngredientPicker(currentId: ''),
     );
     if (addition == null) return;
@@ -190,19 +194,31 @@ class _IngredientPicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Text('Choose ingredient', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-          const SizedBox(height: 10),
-          ...ingredientDatabase.map((ingredient) => ListTile(
-                title: Text(ingredient.name),
-                subtitle: Text(ingredient.inputMode == IngredientInputMode.servings ? 'Serving based' : 'Percentage based'),
-                trailing: ingredient.id == currentId ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
-                onTap: () => Navigator.pop(context, ingredient),
-              )),
-        ]),
+    return FractionallySizedBox(
+      heightFactor: 0.85,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
+              child: const Text('Choose ingredient', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: ingredientDatabase.length,
+                itemBuilder: (context, index) {
+                  final ingredient = ingredientDatabase[index];
+                  return ListTile(
+                    title: Text(ingredient.name),
+                    subtitle: Text(ingredient.inputMode == IngredientInputMode.servings ? 'Serving based' : 'Percentage based'),
+                    trailing: ingredient.id == currentId ? const Icon(Icons.check_circle, color: AppColors.primary) : null,
+                    onTap: () => Navigator.pop(context, ingredient),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
