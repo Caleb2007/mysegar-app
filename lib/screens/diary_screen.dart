@@ -44,9 +44,86 @@ class _DiaryScreenState extends State<DiaryScreen> {
     weightController.text = weight.toStringAsFixed(1);
   }
 
+  List<Widget> _buildDiaryDateTiles(AppState state, DateTime today) {
+    final dates = _diaryDates;
+    final currentMonthStart = DateTime(today.year, today.month, 1);
+    final firstCurrentMonthIndex = dates.indexWhere((date) => !date.isBefore(currentMonthStart));
+    final previousMonthDate = firstCurrentMonthIndex > 0 ? dates[firstCurrentMonthIndex - 1] : null;
+    final tiles = <Widget>[];
+
+    for (var index = 0; index < dates.length; index++) {
+      final date = dates[index];
+      if (index == firstCurrentMonthIndex && previousMonthDate != null) {
+        tiles.add(_MonthDivider(monthDate: previousMonthDate));
+      }
+
+      final selected = AppState.isSameDate(date, selectedDate);
+      final hasData =
+          state.mealsForDate(date).isNotEmpty ||
+          state.exerciseEntriesForDate(date).isNotEmpty ||
+          state.weightForDate(date) != null;
+
+      tiles.add(
+        Padding(
+          padding: const EdgeInsets.only(right: 10),
+          child: InkWell(
+            onTap: () => setState(() {
+              selectedDate = date;
+              _syncWeightController();
+            }),
+            child: Container(
+              width: 74,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: selected ? AppColors.primary : Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: selected ? AppColors.primary : AppColors.border),
+                boxShadow: const [
+                  BoxShadow(color: Color(0x0B000000), blurRadius: 8, offset: Offset(0, 4)),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    DateFormat('E').format(date),
+                    style: TextStyle(
+                      color: selected ? Colors.white70 : AppColors.mutedForeground,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    DateFormat('d').format(date),
+                    style: TextStyle(
+                      color: selected ? Colors.white : AppColors.foreground,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: hasData ? (selected ? Colors.white : AppColors.primary) : Colors.transparent,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return tiles;
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppScope.of(context);
+    final today = _normalizeDate(DateTime.now());
     final summary = state.summaryForDate(selectedDate);
     final breakfast = state.mealsForSection(selectedDate, MealType.breakfast);
     final lunch = state.mealsForSection(selectedDate, MealType.lunch);
@@ -64,25 +141,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
           const SizedBox(height: 14),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Row(children: _diaryDates.map((date) {
-              final selected = AppState.isSameDate(date, selectedDate);
-              final hasData = state.mealsForDate(date).isNotEmpty || state.exerciseEntriesForDate(date).isNotEmpty || state.weightForDate(date) != null;
-              return Padding(
-                padding: const EdgeInsets.only(right: 10),
-                child: InkWell(
-                  onTap: () => setState(() {
-                    selectedDate = date;
-                    _syncWeightController();
-                  }),
-                  child: Container(
-                    width: 74,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(color: selected ? AppColors.primary : Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: selected ? AppColors.primary : AppColors.border), boxShadow: const [BoxShadow(color: Color(0x0B000000), blurRadius: 8, offset: Offset(0, 4))]),
-                    child: Column(children: [Text(DateFormat('E').format(date), style: TextStyle(color: selected ? Colors.white70 : AppColors.mutedForeground, fontWeight: FontWeight.w700)), const SizedBox(height: 6), Text(DateFormat('d').format(date), style: TextStyle(color: selected ? Colors.white : AppColors.foreground, fontSize: 20, fontWeight: FontWeight.w800)), const SizedBox(height: 6), Container(width: 8, height: 8, decoration: BoxDecoration(color: hasData ? (selected ? Colors.white : AppColors.primary) : Colors.transparent, shape: BoxShape.circle))]),
-                  ),
-                ),
-              );
-            }).toList()),
+            child: Row(children: _buildDiaryDateTiles(state, today)),
           ),
           const SizedBox(height: 16),
           CardShell(
@@ -190,5 +249,45 @@ class _Summary extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(children: [Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: color)), Text(label, style: const TextStyle(color: AppColors.mutedForeground))]);
+  }
+}
+
+class _MonthDivider extends StatelessWidget {
+  final DateTime monthDate;
+
+  const _MonthDivider({required this.monthDate});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 10),
+      child: SizedBox(
+        height: 92,
+        child: Row(
+          children: [
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.arrow_left_rounded, color: AppColors.mutedForeground, size: 18),
+                Text(
+                  DateFormat('MMMM').format(monthDate),
+                  style: const TextStyle(
+                    color: AppColors.mutedForeground,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 8),
+            Container(
+              width: 1,
+              height: double.infinity,
+              color: AppColors.border,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

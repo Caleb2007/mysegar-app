@@ -34,12 +34,12 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
     final state = AppScope.of(context);
     final growthDay = state.currentPlantGrowthDay();
     final successDays = state.successfulCalorieDays(maxDays: 100);
-    
+
     setState(() {
       _growthDay = growthDay;
       _successfulDays = successDays;
     });
-    
+
     // Set the animation controller value based on growth day
     // Day 1 => progress 0.0, Day 100 => progress 1.0
     final progress = (_growthDay - 1) / 99.0;

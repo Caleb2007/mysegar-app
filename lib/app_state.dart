@@ -260,7 +260,9 @@ class AppState extends ChangeNotifier {
 
   int currentPlantGrowthDay() {
     final successDays = successfulCalorieDays(maxDays: 100);
-    return successDays <= 0 ? 1 : successDays.clamp(1, 100);
+    // Advance animation by 15 days for every successful day
+    final growthDay = successDays <= 0 ? 1 : (successDays * 15).clamp(1, 1500);
+    return growthDay;
   }
 
   Future<void> _persistMeals() async {
