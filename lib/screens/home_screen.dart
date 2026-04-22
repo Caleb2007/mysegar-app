@@ -79,14 +79,14 @@ class HomeScreen extends StatelessWidget {
               style: FilledButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 18), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18))),
               onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Input1Screen(date: today, mealType: state.autoMealTypeForNow()))),
               icon: const Icon(Icons.add_circle_outline_rounded),
-              label: const Text('Start Assessment', style: TextStyle(fontWeight: FontWeight.w800)),
+              label: const Text('Log food', style: TextStyle(fontWeight: FontWeight.w800)),
             ),
           ),
           const SizedBox(height: 24),
           const Text("Today's Meals", style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
           const SizedBox(height: 12),
           if (mealCards.isEmpty)
-            const CardShell(child: Text('No meals logged yet. Start an assessment to add your first meal.', style: TextStyle(color: AppColors.mutedForeground)))
+            const CardShell(child: Text('No meals logged yet. Add your first meal.', style: TextStyle(color: AppColors.mutedForeground)))
           else
             ...mealCards.map((item) {
               final mealType = item['type']! as MealType;
