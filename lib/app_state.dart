@@ -7,6 +7,7 @@ import 'data/food_database.dart';
 import 'models/diary_day_summary.dart';
 import 'models/exercise_entry.dart';
 import 'models/meal_entry.dart';
+import 'models/stored_account.dart';
 import 'models/user_profile.dart';
 import 'models/weight_entry.dart';
 import 'services/local_storage_service.dart';
@@ -20,27 +21,46 @@ class AppState extends ChangeNotifier {
   List<MealEntry> _meals = [];
   List<ExerciseEntry> _exercises = [];
   List<WeightEntry> _weights = [];
+  List<StoredAccount> _accounts = [];
   bool _isLoaded = false;
   bool _hasSeenOnboarding = false;
+  String? _activeAccountId;
 
   bool get isLoaded => _isLoaded;
   UserProfile get profile => _profile;
   bool get needsProfileSetup => !_profile.isComplete;
   bool get hasSeenOnboarding => _hasSeenOnboarding;
+  bool get hasSavedAccounts => _accounts.isNotEmpty;
+  String? get activeAccountId => _activeAccountId;
+  List<StoredAccount> get savedAccounts {
+    final accounts = List<StoredAccount>.from(_accounts);
+    accounts.sort((a, b) => b.lastUsedAt.compareTo(a.lastUsedAt));
+    return accounts;
+  }
   List<DishDefinition> get dishes => dishDatabase;
   List<IngredientDefinition> get ingredientsCatalog => ingredientDatabase;
   List<ExerciseCatalogItem> get exercisesCatalog => exerciseDatabase;
 
   Future<void> load() async {
-    _profile = await _storageService.loadProfile();
-    _meals = await _storageService.loadMeals();
-    _exercises = await _storageService.loadExercises();
-    _weights = await _storageService.loadWeights();
     _hasSeenOnboarding = await _storageService.loadOnboardingDone();
-    await _pruneOldData(save: false);
-    if (_weights.isEmpty && _profile.isComplete) {
-      _weights = [WeightEntry(date: _normalizeDate(DateTime.now()), weightKg: _profile.weightKg)];
+    _accounts = await _storageService.loadAccounts();
+    _activeAccountId = await _storageService.loadActiveAccountId();
+
+    if (_accounts.isEmpty) {
+      await _migrateLegacyStorage();
     }
+
+    if (_activeAccountId != null) {
+      final activeAccount = _findAccount(_activeAccountId!);
+      if (activeAccount != null) {
+        _loadAccountIntoMemory(activeAccount);
+      } else {
+        _clearCurrentSession();
+      }
+    } else {
+      _clearCurrentSession();
+    }
+
     _isLoaded = true;
     notifyListeners();
   }
@@ -53,19 +73,60 @@ class AppState extends ChangeNotifier {
 
   Future<void> saveProfile(UserProfile profile) async {
     _profile = profile;
-    await _storageService.saveProfile(_profile);
     final today = _normalizeDate(DateTime.now());
     final existingIndex = _weights.indexWhere((entry) => isSameDate(entry.date, today));
     if (existingIndex == -1) {
       _weights.add(WeightEntry(date: today, weightKg: profile.weightKg));
     }
-    await _persistWeights();
+    await _saveOrUpdateActiveAccount(prune: true);
     notifyListeners();
   }
 
   Future<void> updatePersonalDetails({required String name, required double targetWeightKg, required String profileImagePath}) async {
     _profile = _profile.copyWith(name: name, targetWeightKg: targetWeightKg, profileImagePath: profileImagePath);
-    await _storageService.saveProfile(_profile);
+    await _saveOrUpdateActiveAccount();
+    notifyListeners();
+  }
+
+  Future<void> signOut() async {
+    if (_profile.isComplete) {
+      await _saveOrUpdateActiveAccount(prune: true);
+    }
+    _clearCurrentSession();
+    await _storageService.saveActiveAccountId(null);
+    notifyListeners();
+  }
+
+  Future<void> signInToAccount(String accountId) async {
+    final account = _findAccount(accountId);
+    if (account == null) return;
+    _activeAccountId = accountId;
+    _loadAccountIntoMemory(account);
+    await _saveOrUpdateActiveAccount(prune: true);
+    notifyListeners();
+  }
+
+  Future<void> startNewAccountSetup() async {
+    _clearCurrentSession();
+    await _storageService.saveActiveAccountId(null);
+    notifyListeners();
+  }
+
+  Future<void> deleteSavedAccount(String accountId) async {
+    _accounts.removeWhere((account) => account.id == accountId);
+
+    if (_activeAccountId == accountId) {
+      _clearCurrentSession();
+      await _storageService.saveActiveAccountId(null);
+    }
+
+    await _storageService.saveAccounts(_accounts);
+    notifyListeners();
+  }
+
+  Future<void> resetOnboarding() async {
+    _hasSeenOnboarding = false;
+    await _storageService.saveOnboardingDone(false);
     notifyListeners();
   }
 
@@ -266,20 +327,17 @@ class AppState extends ChangeNotifier {
   }
 
   Future<void> _persistMeals() async {
-    await _pruneOldData(save: false);
-    await _storageService.saveMeals(_meals);
+    await _saveOrUpdateActiveAccount(prune: true);
     notifyListeners();
   }
 
   Future<void> _persistExercises() async {
-    await _pruneOldData(save: false);
-    await _storageService.saveExercises(_exercises);
+    await _saveOrUpdateActiveAccount(prune: true);
     notifyListeners();
   }
 
   Future<void> _persistWeights() async {
-    await _pruneOldData(save: false);
-    await _storageService.saveWeights(_weights);
+    await _saveOrUpdateActiveAccount(prune: true);
     notifyListeners();
   }
 
@@ -302,6 +360,80 @@ class AppState extends ChangeNotifier {
   static bool isSameDate(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   String _newId() => '${DateTime.now().microsecondsSinceEpoch}${Random().nextInt(999)}';
+
+  StoredAccount? _findAccount(String id) {
+    for (final account in _accounts) {
+      if (account.id == id) return account;
+    }
+    return null;
+  }
+
+  void _clearCurrentSession() {
+    _activeAccountId = null;
+    _profile = UserProfile.empty;
+    _meals = [];
+    _exercises = [];
+    _weights = [];
+  }
+
+  void _loadAccountIntoMemory(StoredAccount account) {
+    _profile = account.profile;
+    _meals = List<MealEntry>.from(account.meals);
+    _exercises = List<ExerciseEntry>.from(account.exercises);
+    _weights = List<WeightEntry>.from(account.weights);
+  }
+
+  Future<void> _migrateLegacyStorage() async {
+    final legacyProfile = await _storageService.loadProfile();
+    final legacyMeals = await _storageService.loadMeals();
+    final legacyExercises = await _storageService.loadExercises();
+    final legacyWeights = await _storageService.loadWeights();
+
+    if (!legacyProfile.isComplete) return;
+
+    _profile = legacyProfile;
+    _meals = legacyMeals;
+    _exercises = legacyExercises;
+    _weights = legacyWeights;
+    await _saveOrUpdateActiveAccount(prune: true);
+  }
+
+  Future<void> _saveOrUpdateActiveAccount({bool prune = false}) async {
+    if (!_profile.isComplete) return;
+
+    if (prune) {
+      await _pruneOldData(save: false);
+    }
+    if (_weights.isEmpty) {
+      _weights = [
+        WeightEntry(
+          date: _normalizeDate(DateTime.now()),
+          weightKg: _profile.weightKg,
+        ),
+      ];
+    }
+
+    final accountId = _activeAccountId ?? _newId();
+    final snapshot = StoredAccount(
+      id: accountId,
+      profile: _profile,
+      meals: List<MealEntry>.from(_meals),
+      exercises: List<ExerciseEntry>.from(_exercises),
+      weights: List<WeightEntry>.from(_weights),
+      lastUsedAt: DateTime.now(),
+    );
+
+    final index = _accounts.indexWhere((account) => account.id == accountId);
+    if (index == -1) {
+      _accounts.add(snapshot);
+    } else {
+      _accounts[index] = snapshot;
+    }
+
+    _activeAccountId = accountId;
+    await _storageService.saveAccounts(_accounts);
+    await _storageService.saveActiveAccountId(accountId);
+  }
 }
 
 class AppScope extends InheritedNotifier<AppState> {

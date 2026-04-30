@@ -15,13 +15,13 @@ class ProfileSetupScreen extends StatefulWidget {
 
 class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _nameController = TextEditingController();
-  final _ageController = TextEditingController(text: '18');
-  final _heightController = TextEditingController(text: '170');
-  final _weightController = TextEditingController(text: '74');
-  final _targetWeightController = TextEditingController(text: '68');
-  String _gender = 'Male';
-  String _activity = 'Moderately active';
-  String _goal = 'Lose weight';
+  final _ageController = TextEditingController();
+  final _heightController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _targetWeightController = TextEditingController();
+  String? _gender;
+  String? _activity;
+  String? _goal;
   final _diseaseController = TextEditingController();
 
   @override
@@ -75,23 +75,43 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 
   Future<void> _save() async {
-    final age = int.tryParse(_ageController.text.trim()) ?? 18;
-    final height = double.tryParse(_heightController.text.trim()) ?? 170;
-    final weight = double.tryParse(_weightController.text.trim()) ?? 74;
-    final targetWeight = double.tryParse(_targetWeightController.text.trim()) ?? 68;
     final name = _nameController.text.trim();
-    if (name.isEmpty) return;
+    final age = int.tryParse(_ageController.text.trim());
+    final height = double.tryParse(_heightController.text.trim());
+    final weight = double.tryParse(_weightController.text.trim());
+    final targetWeight = double.tryParse(_targetWeightController.text.trim());
 
-    final target = calculateDailyTarget(gender: _gender, age: age, heightCm: height, weightKg: weight, activityLevel: _activity, goal: _goal);
+    if (name.isEmpty ||
+        age == null ||
+        height == null ||
+        weight == null ||
+        targetWeight == null ||
+        _gender == null ||
+        _activity == null ||
+        _goal == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields.')),
+      );
+      return;
+    }
+
+    final target = calculateDailyTarget(
+      gender: _gender!,
+      age: age,
+      heightCm: height,
+      weightKg: weight,
+      activityLevel: _activity!,
+      goal: _goal!,
+    );
     final profile = UserProfile(
       name: name,
-      gender: _gender,
+      gender: _gender!,
       age: age,
       heightCm: height,
       weightKg: weight,
       targetWeightKg: targetWeight,
-      activityLevel: _activity,
-      goal: _goal,
+      activityLevel: _activity!,
+      goal: _goal!,
       diseaseCondition: _diseaseController.text.trim(),
       dailyTargetCalories: target,
       profileImagePath: '',
@@ -116,7 +136,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
     );
   }
 
-  Widget _dropdown(String label, String value, List<String> items, ValueChanged<String?> onChanged) {
+  Widget _dropdown(String label, String? value, List<String> items, ValueChanged<String?> onChanged) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -124,6 +144,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
         const SizedBox(height: 8),
         DropdownButtonFormField<String>(
           value: value,
+          hint: Text('Select $label'),
           items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
           onChanged: onChanged,
           decoration: InputDecoration(filled: true, fillColor: AppColors.secondary, border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none)),
