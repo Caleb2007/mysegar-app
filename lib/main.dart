@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'app_state.dart';
+import 'screens/account_selection_screen.dart';
 import 'screens/app_shell_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/profile_setup_screen.dart';
@@ -79,6 +80,9 @@ class _MySegarAppState extends State<MySegarApp> {
                       _state.completeOnboarding();
                     },
                   );
+                }
+                if (_state.activeAccountId == null && _state.hasSavedAccounts) {
+                  return const AccountSelectionScreen();
                 }
                 if (_state.needsProfileSetup) return const ProfileSetupScreen();
                 return const AppShellScreen();

@@ -124,7 +124,32 @@ class _StatItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(color: AppColors.mutedForeground)), Text(value, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, color: color))]);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: AppColors.mutedForeground)),
+        RichText(
+          text: TextSpan(
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+              color: color,
+            ),
+            children: [
+              TextSpan(text: value),
+              TextSpan(
+                text: ' calories',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color.withValues(alpha: 0.85),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 

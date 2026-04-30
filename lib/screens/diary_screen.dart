@@ -20,17 +20,24 @@ class DiaryScreen extends StatefulWidget {
 class _DiaryScreenState extends State<DiaryScreen> {
   late DateTime selectedDate;
   late TextEditingController weightController;
+  late ScrollController _dateScrollController;
+  bool _didJumpToLatestDate = false;
 
   @override
   void initState() {
     super.initState();
     selectedDate = _normalizeDate(DateTime.now());
     weightController = TextEditingController();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncWeightController());
+    _dateScrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncWeightController();
+      _jumpToLatestDate();
+    });
   }
 
   @override
   void dispose() {
+    _dateScrollController.dispose();
     weightController.dispose();
     super.dispose();
   }
@@ -42,6 +49,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
     final state = AppScope.of(context);
     final weight = state.weightForDate(selectedDate)?.weightKg ?? state.lastKnownWeightBefore(selectedDate);
     weightController.text = weight.toStringAsFixed(1);
+  }
+
+  void _jumpToLatestDate() {
+    if (_didJumpToLatestDate || !_dateScrollController.hasClients) return;
+    _dateScrollController.jumpTo(_dateScrollController.position.maxScrollExtent);
+    _didJumpToLatestDate = true;
   }
 
   List<Widget> _buildDiaryDateTiles(AppState state, DateTime today) {
@@ -140,6 +153,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
           const Text('Diary', style: TextStyle(fontSize: 30, fontWeight: FontWeight.w800)),
           const SizedBox(height: 14),
           SingleChildScrollView(
+            controller: _dateScrollController,
             scrollDirection: Axis.horizontal,
             child: Row(children: _buildDiaryDateTiles(state, today)),
           ),
@@ -191,7 +205,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
             ...items.map((item) => Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
-              child: Row(children: [Expanded(child: Text(item.dishName, style: const TextStyle(fontWeight: FontWeight.w700))), Text('${item.calories} kcal', style: const TextStyle(color: AppColors.mutedForeground)), IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Input2Screen(date: selectedDate, mealType: mealType, dish: state.dishes.firstWhere((d) => d.id == item.dishId), originalEntry: item))), icon: const Icon(Icons.edit_outlined, size: 18)), IconButton(onPressed: () => _confirmDeleteMeal(context, state, item), icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.red))]),
+              child: Row(children: [
+                _MealThumbnail(imagePath: item.imagePath),
+                const SizedBox(width: 12),
+                Expanded(child: Text(item.dishName, style: const TextStyle(fontWeight: FontWeight.w700))),
+                Text('${item.calories} kcal', style: const TextStyle(color: AppColors.mutedForeground)),
+                IconButton(onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => Input2Screen(date: selectedDate, mealType: mealType, dish: state.dishes.firstWhere((d) => d.id == item.dishId), originalEntry: item))), icon: const Icon(Icons.edit_outlined, size: 18)),
+                IconButton(onPressed: () => _confirmDeleteMeal(context, state, item), icon: const Icon(Icons.delete_outline_rounded, size: 18, color: AppColors.red))
+              ]),
             )),
         ]),
       ),
@@ -287,6 +308,37 @@ class _MonthDivider extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MealThumbnail extends StatelessWidget {
+  const _MealThumbnail({required this.imagePath});
+
+  final String imagePath;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 44,
+        height: 44,
+        color: AppColors.secondary,
+        child: imagePath.isNotEmpty
+            ? Image.asset(
+                imagePath,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const Icon(
+                  Icons.restaurant_rounded,
+                  color: AppColors.mutedForeground,
+                ),
+              )
+            : const Icon(
+                Icons.restaurant_rounded,
+                color: AppColors.mutedForeground,
+              ),
       ),
     );
   }

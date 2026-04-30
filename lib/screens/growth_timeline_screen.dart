@@ -115,30 +115,25 @@ class _GrowthTimelineScreenState extends State<GrowthTimelineScreen>
                   left: 0,
                   right: 0,
                   child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Successful Days: $_successfulDays',
-                          style:
-                              Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                                shadows: const [
-                                  Shadow(
-                                    color: Colors.black54,
-                                    offset: Offset(0, 1),
-                                    blurRadius: 4,
-                                  ),
-                                ],
-                              ) ??
-                              const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
+                    child: Text(
+                      'Successful Days: $_successfulDays',
+                      style:
+                          Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black54,
+                                offset: Offset(0, 1),
+                                blurRadius: 4,
                               ),
-                        ),
-                      ],
+                            ],
+                          ) ??
+                          const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                     ),
                   ),
                 ),
