@@ -6,7 +6,7 @@ A mobile app developed by the team **New Document** for the National AI Competit
 - Language: Dart
 - UI Design: Custom Flutter Widgets
 - State Management: setState / Provider
-- Storage: Local storage (and/or Firebase if enabled)
+- Storage: Local
 
 Additional features include: 
 - workout tracking
@@ -21,18 +21,18 @@ How to install on an Android phone:
 
 If no Android phone: Run with Flutter SDK (Developer Mode)
 
-Requirements:
-- Flutter SDK installed
-- Android Studio / VS Code (optional)
-
-Steps:
-1. git clone https://github.com/Caleb2007/mysegar-app.git
-- cd mysegar-app
-2. flutter pub get
-3. flutter run
+  Requirements:
+  - Flutter SDK installed
+  - Android Studio / VS Code (optional)
+  
+  Steps:
+  1. git clone https://github.com/Caleb2007/mysegar-app.git
+  - cd mysegar-app
+  2. flutter pub get
+  3. flutter run
 
 Canva link for our app: https://www.canva.com/design/DAHGseEjPys/41oTgBDgwz_KH9HI6rcqQw/edit
 
-Our app is currently in beta, not fully deployed for public use.
+Our app is currently in beta and not fully deployed for public use.
 
 **Licensed MIT**
