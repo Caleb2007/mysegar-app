@@ -23,7 +23,7 @@ Additional features include:
 
 ## If no Android phone
 
-*Easy Method:*
+*Easy Method:* Bluestacks (Android Emulator)
 1. Download the latest Bluestacks installer on a Windows PC from https://www.bluestacks.com/ms/index.html.
 2.  Run the installer and wait for it to set up.
 3.  Download the apk and just double click the apk.
