@@ -7,9 +7,10 @@ Additional features include:
 - weight tracking
 
 How to install on an Android phone:
-1. Install the apk located in the Releases tab.
-2. Run the .apk file on your phone (should be located in the `Downloads` tab of Google Chrome).
-3. Let the app install and it should be on your home screen.
+1. Click on MySegar v1.0.0 in the `Releases` tab
+2. Download `v1.0.0-mysegar-demo.apk`
+3. Run the .apk file on your phone (should be located in the `Downloads` tab of Google Chrome).
+4. Let the app install and it should be on your home screen.
 
 Canva link for our app: https://www.canva.com/design/DAHGseEjPys/41oTgBDgwz_KH9HI6rcqQw/edit
 
